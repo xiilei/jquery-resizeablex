@@ -1,4 +1,2 @@
-##jquery-resizeable-x
-==================
-
-A fast  jQuery plugin for resizeable
+### jquery-resizeable-x
+A fast jQuery plugin for resizeable
