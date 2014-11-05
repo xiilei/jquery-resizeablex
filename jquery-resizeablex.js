@@ -5,6 +5,54 @@
  * @returns {jquery-resizeablex_L1.Resizablex}
  * @author xilei
  */
+//resize handle html 
+var handleTpl = '<div class="resizable-handle resizable-{d}"></div>';
+
+var resizeHandles = {
+        n:function(resize){
+            var resizeh = resize.h+resize.t-resize.y;
+            if(resizeh<0){
+                return ;
+            }
+            resize.h = resizeh;
+            resize.t = resize.y;               
+            resize.top();
+            resize.height();
+        },
+        e:function(resize){
+            resize.w = resize.x - resize.l;
+            resize.width();
+        },
+        s:function(resize){
+            resize.h = resize.y - resize.t;
+            resize.height();
+        },
+        w:function(resize){
+            var resizew = resize.w+resize.l-resize.x;
+            if(resizew<0){
+                return ;
+            }
+            resize.w = resizew; 
+            resize.l = resize.x;
+            resize.left();
+            resize.width();
+        },
+        se:function(resize){
+            this.s(resize);this.e(resize);
+        },
+        sw:function(resize){
+            this.s(resize);this.w(resize);
+        },
+        ne:function(resize){
+            this.n(resize);this.e(resize);
+        },
+        nw:function(resize){
+            this.n(resize);this.w(resize);
+        }
+};
+
+var _current = null;
+
 var Resizablex = function(element){
          var _pos = element.position();
          this.dom = element;
@@ -17,87 +65,23 @@ var Resizablex = function(element){
          this.direction = null;
          this.controls = {};
          this.init();
-     };
-    //resize handle html 
-    Resizablex.htmlTpl = '<div class="resizable-handle resizable-{d}"></div>';
+     };    
 
     Resizablex.prototype = {
 
-        resizeHandles:{
-            n:function(resize){
-                var resizeh = resize.h+resize.t-resize.y;
-                if(resizeh<0){
-                    return ;
-                }
-                resize.h = resizeh;
-                resize.t = resize.y;               
-                resize.top();
-                resize.height();
-            },
-            e:function(resize){
-                resize.w = resize.x - resize.l;
-                resize.width();
-            },
-            s:function(resize){
-                resize.h = resize.y - resize.t;
-                resize.height();
-            },
-            w:function(resize){
-                var resizew = resize.w+resize.l-resize.x;
-                if(resizew<0){
-                    return ;
-                }
-                resize.w = resizew;
-                resize.l = resize.x;
-                resize.left();
-                resize.width();
-            },
-            se:function(resize){
-                this.s(resize);this.e(resize);
-            },
-            sw:function(resize){
-                this.s(resize);this.w(resize);
-            },
-            ne:function(resize){
-                this.n(resize);this.e(resize);
-            },
-            nw:function(resize){
-                this.n(resize);this.w(resize);
-            }
-        },
-
         init:function(){
-            for(var direction in this.resizeHandles){
-                this.controls[direction] = $(Resizablex.htmlTpl.replace('{d}',direction));
+            for(var direction in resizeHandles){
+                this.controls[direction] = $(handleTpl.replace('{d}',direction));
                 this.dom.append(this.controls[direction]);
                 this.controls[direction]
                         .bind('mousedown',{direction:direction},$.proxy(this,'_mousedown'));
             }
-            //@todo: only bind once
-            $(window.document)
-                    .bind('mousemove',$.proxy(this,'_mousemove'))
-                    .bind('mouseup',$.proxy(this,'_mouseup'));
         },
 
         _mousedown:function(e){
             e.stopPropagation();
             this.direction = e.data.direction;
-            return true;
-        },
-
-        _mousemove:function(e){
-            if(!this.direction){return true;}
-            e.preventDefault();
-            e.stopPropagation();
-            this.x = e.clientX;
-            this.y = e.clientY;
-            this.resizeHandles[this.direction](this);
-            return true;
-        },
-
-        _mouseup:function(e){
-            e.stopPropagation();
-            this.direction = null;
+            _current = this;
             return true;
         },
 
@@ -145,7 +129,25 @@ var Resizablex = function(element){
 
         }
 
-   };
+};
+//less callback
+$(window.document).bind('mousemove',function(e){
+    if(!_current){
+        return true;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    _current.x = e.clientX;
+    _current.y = e.clientY;
+    resizeHandles[_current.direction](_current);
+}).bind('mouseup',function(e){
+    if(!_current){
+        return true;
+    }
+    e.stopPropagation();
+    _current.direction = null;
+    _current = null;
+});
 
 $.fn.resizeablex = function(){
     $.each(this,function(){
