@@ -11,7 +11,7 @@ var handleTpl = '<div class="resizable-handle resizable-{d}"></div>';
 var resizeHandles = {
         n:function(resize){
             var resizeh = resize.h+resize.t-resize.y;
-            if(resizeh<0){
+            if(resizeh<resize.options.minh){
                 return ;
             }
             resize.h = resizeh;
@@ -29,7 +29,7 @@ var resizeHandles = {
         },
         w:function(resize){
             var resizew = resize.w+resize.l-resize.x;
-            if(resizew<0){
+            if(resizew < resize.options.minw){
                 return ;
             }
             resize.w = resizew; 
@@ -53,7 +53,12 @@ var resizeHandles = {
 
 var _current = null;
 
-var Resizablex = function(element){
+var defaultOptions = {
+    minh:10,
+    minw:10
+};
+
+var Resizablex = function(element,options){
          var _pos = element.position();
          this.dom = element;
          this.w = this.dom.width();
@@ -61,7 +66,8 @@ var Resizablex = function(element){
          this.l = _pos.left;
          this.t = _pos.top;
          this.x = 0;
-         this.y = 0;
+         this.y = 0;         
+         this.options = $.extend({},defaultOptions,options);
          this.direction = null;
          this.controls = {};
          this.init();
@@ -86,32 +92,39 @@ var Resizablex = function(element){
         },
 
         width:function(value){
-            if(!value){
-                value = this.w;
+            if(value){
+               this.w = value;
             }
-            this.dom.width(value < 0 ? 0 :value);
+            this.w = this.w < this.options.minw ? this.options.minw :this.w ;
+            this.dom.width(this.w);
             return this;
         },
         height:function(value){
-            if(!value){
-                value = this.h;
+            if(value){
+               this.h = value;
             }
-            this.dom.height(value < 0 ? 0 :value);
+            this.h = this.h < this.options.minh ? this.options.minh :this.h ;
+            this.dom.height(this.h);
             return this;
         },
 
         left:function(value){
-            if(value===undefined){
-                value = this.l;
+            if(value){
+               this.l = value;
             }
-            this.dom.css('left',value);
+            this.dom.css('left',this.l);
         },
 
         top:function(value){
-            if(value===undefined){
-                value = this.t;
+            if(value){
+               this.t = value;
             }
-            this.dom.css('top',value);
+            this.dom.css('top',this.t);
+        },
+        
+        limit:function(w,h){
+            this.minw = w>0 ? w : 0;
+            this.minh = h>0 ? h : 0;
         },
         
         //@todo disabled some direction  resize 
@@ -149,10 +162,12 @@ $(window.document).bind('mousemove',function(e){
     _current = null;
 });
 
-$.fn.resizeablex = function(){
+$.fn.resizeablex = function(options){
+    var resizes = [];
     $.each(this,function(){
-       new Resizablex($(this));
+       resizes.push(new Resizablex($(this),options));
     });
+    return resizes;
 };
 
 })(window,jQuery);
