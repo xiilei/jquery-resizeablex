@@ -90,6 +90,7 @@ var Resizablex = function(element,options){
         },
 
         _mousedown:function(e){
+            if(e.button===2)return false;
             e.stopPropagation();
             this.direction = e.data.direction;
             _current = this;
@@ -143,6 +144,9 @@ var Resizablex = function(element,options){
         },
         
         _dragmousedown:function(e){
+            if(e.button===2)return false;
+            
+            e.stopPropagation();
             this.dragoffset = {
                 x:e.clientX-this.l,
                 y:e.clientY-this.t
