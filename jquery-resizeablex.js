@@ -55,7 +55,8 @@ var _current = null;
 
 var defaultOptions = {
     minh:10,
-    minw:10
+    minw:10,
+    dragable:true
 };
 
 var Resizablex = function(element,options){
@@ -69,6 +70,7 @@ var Resizablex = function(element,options){
          this.y = 0;         
          this.options = $.extend({},defaultOptions,options);
          this.direction = null;
+         this.dragoffset = null;
          this.controls = {};
          this.init();
      };    
@@ -81,6 +83,9 @@ var Resizablex = function(element,options){
                 this.dom.append(this.controls[direction]);
                 this.controls[direction]
                         .bind('mousedown',{direction:direction},$.proxy(this,'_mousedown'));
+            }
+            if(this.options.dragable){
+                this.dom.bind('mousedown',$.proxy(this,'_dragmousedown'));
             }
         },
 
@@ -123,8 +128,8 @@ var Resizablex = function(element,options){
         },
         
         limit:function(w,h){
-            this.minw = w>0 ? w : 0;
-            this.minh = h>0 ? h : 0;
+            this.options.minw = w>0 ? w : 0;
+            this.options.minh = h>0 ? h : 0;
         },
         
         //@todo disabled some direction  resize 
@@ -137,11 +142,19 @@ var Resizablex = function(element,options){
 
         },
         
-        //@todo dragable for element
-        dragable:function(){
-
+        _dragmousedown:function(e){
+            this.dragoffset = {
+                x:e.clientX-this.l,
+                y:e.clientY-this.t
+            };
+            _current = this;
+        },
+        
+        _dragmousemove:function(e){
+            this.l = e.clientX-this.dragoffset.x;
+            this.t = e.clientY-this.dragoffset.y;
+            this.dom.css({'left':this.l,'top':this.t});
         }
-
 };
 //less callback
 $(window.document).bind('mousemove',function(e){
@@ -150,15 +163,20 @@ $(window.document).bind('mousemove',function(e){
     }
     e.preventDefault();
     e.stopPropagation();
-    _current.x = e.clientX;
-    _current.y = e.clientY;
-    resizeHandles[_current.direction](_current);
+    if(_current.direction){
+        _current.x = e.clientX;
+        _current.y = e.clientY;
+        resizeHandles[_current.direction](_current);
+    }else if(_current.dragoffset){
+        _current._dragmousemove(e);
+    }
 }).bind('mouseup',function(e){
     if(!_current){
         return true;
     }
     e.stopPropagation();
     _current.direction = null;
+    _current.dragoffset = null;
     _current = null;
 });
 
