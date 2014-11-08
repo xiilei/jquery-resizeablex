@@ -1,6 +1,16 @@
 (function(window,$){
 /**
  * resizeable-x 
+ * 
+ * events 
+ *       raxdragstart
+ *       raxdragmove  
+ *       raxdragend  
+ *       raxmove
+ *       raxstart
+ *       raxend
+ * 
+ * 
  * @param Jquery element
  * @returns {jquery-resizeablex_L1.Resizablex}
  * @author xilei
@@ -59,6 +69,37 @@ var defaultOptions = {
     dragable:true
 };
 
+/**
+ * resizeable manager 
+ * @type type
+ */
+var RaxMananer = {
+    _items:{},
+    
+    guid:0,
+    
+    create:function(element,options){
+        var id = element.attr('id') || 'rax_'+this.guid++ ;
+        this._items[id] = new Resizablex(element,options);
+        return this._items[id];
+    },
+    
+    get:function(id){
+        return this._items[id];
+    },
+    
+    call:function(fn,params){
+        var checked = false,id=null;
+        for(id in this._items){
+            if(!checked && $.type(this._items[id][fn]) != 'function'){
+                break;
+                checked = true;
+            }
+            this._items[id][fn](params);
+        }
+    }
+};
+
 var Resizablex = function(element,options){
          var _pos = element.position();
          this.dom = element;
@@ -90,10 +131,14 @@ var Resizablex = function(element,options){
         },
 
         _mousedown:function(e){
+            if(this.dom.hasClass('raxstart')){
+                return true;
+            }
             if(e.button===2)return false;
             e.stopPropagation();
             this.direction = e.data.direction;
             _current = this;
+            this.dom.triggerHandler($.Event('raxstart',{rax:this}));
             return true;
         },
 
@@ -134,16 +179,27 @@ var Resizablex = function(element,options){
         },
         
         //@todo disabled some direction  resize 
-        disabled:function(){
-
+        disable:function(){
+            this.dom.addClass('rax-disable');
         },
         
         //@todo enabled some direction  resize 
-        enabled:function(){
-
+        enable:function(){
+            this.dom.removeClass('rax-disable');
+        },
+        
+        dragdisable:function(){
+            this.dom.addClass('rax-drag-disable');
+        },
+        
+        dragenable:function(){
+           this.dom.removeClass('rax-drag-disable'); 
         },
         
         _dragmousedown:function(e){
+            if(this.dom.hasClass('rax-drag-disable')){
+                return true;
+            }
             if(e.button===2)return false;
             
             e.stopPropagation();
@@ -152,6 +208,7 @@ var Resizablex = function(element,options){
                 y:e.clientY-this.t
             };
             _current = this;
+            this.dom.triggerHandler($.Event('raxdragstart',{rax:this}));
         },
         
         _dragmousemove:function(e){
@@ -171,25 +228,40 @@ $(window.document).bind('mousemove',function(e){
         _current.x = e.clientX;
         _current.y = e.clientY;
         resizeHandles[_current.direction](_current);
+        _current.dom.triggerHandler($.Event('raxmove',{rax:_current}));
     }else if(_current.dragoffset){
         _current._dragmousemove(e);
+        _current.dom.triggerHandler($.Event('raxdragmove',{rax:_current}));
     }
 }).bind('mouseup',function(e){
     if(!_current){
         return true;
     }
     e.stopPropagation();
-    _current.direction = null;
-    _current.dragoffset = null;
+    if(_current.direction){
+        _current.dom.triggerHandler($.Event('raxend',{rax:_current}));
+        _current.direction = null;
+    }else if(_current.dragoffset){
+        _current.dom.triggerHandler($.Event('raxdragend',{rax:_current}));
+         _current.dragoffset = null;
+    }
     _current = null;
 });
 
+/**
+ * options object see defaultOptions
+ *         string disable|enable|dragdisable|dragenable 
+ * @returns jquery instance
+ */
 $.fn.resizeablex = function(options){
-    var resizes = [];
-    $.each(this,function(){
-       resizes.push(new Resizablex($(this),options));
-    });
-    return resizes;
+    if($.type(options) == 'string' && $.inArray(options,['disable','enable','dragenable','dragdisable'])!=-1){
+        RaxMananer.call(options);
+    }else{
+        this.each(function(){
+          RaxMananer.create($(this),options);
+        });
+    }
+    return this;
 };
 
 })(window,jQuery);
