@@ -131,7 +131,7 @@ var Resizablex = function(element,options){
         },
 
         _mousedown:function(e){
-            if(this.dom.hasClass('raxstart')){
+            if(this.dom.hasClass('rax-disable')){
                 return true;
             }
             if(e.button===2)return false;
