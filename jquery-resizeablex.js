@@ -92,9 +92,9 @@ var RaxMananer = {
         var checked = false,id=null;
         for(id in this._items){
             if(!checked && $.type(this._items[id][fn]) != 'function'){
-                break;
-                checked = true;
+                break;                
             }
+            checked = true;
             this._items[id][fn](params);
         }
     }
