@@ -254,7 +254,7 @@ $(window.document).bind('mousemove',function(e){
  * @returns jquery instance
  */
 $.fn.resizeablex = function(options){
-    if($.type(options) == 'string' && $.inArray(options,['disable','enable','dragenable','dragdisable'])!=-1){
+    if($.type(options) == 'string'){
         RaxMananer.call(options);
     }else{
         this.each(function(){
